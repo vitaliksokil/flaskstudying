@@ -1,0 +1,35 @@
+*{
+    padding: 0;
+    margin: 0;
+}
+header{
+    padding: 20px;
+    background: #777;
+}
+header nav ul{
+    display: flex;
+    justify-content: center;
+}
+header nav ul li{
+    list-style: none;
+    margin-right: 10px;
+    text-transform: uppercase;
+}
+header nav ul li a{
+    color: #fff;
+    text-decoration: none;
+}
+header nav ul li a:hover{
+    color: #1a1a1a;
+}
+
+.contrainer{
+    width: 80%;
+    margin: 0 auto;
+}
+h1{
+text-align: center;
+}
+.about p {
+    text-align: center;
+}
