@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+    {% block head %}
+    {% block title %} <title>{{title}} </title>{% endblock %}
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/app.css') }}">
+    {% endblock %}
+</head>
+
+
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-9">
+            <div class="page-header">
+                <h1>About PNU</h1>
+                <h2>Essential information for education</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<nav class="navbar navbar-dark bg-dark" style="background-color: #66ccff;">
+    <div class="container-fluid">
+        <ul class="nav navbar-nav">
+            <li><a href="{{url_for('index')}}"> Home</a></li>
+            <li><a href="{{url_for('login')}}"> Login</a></li>
+            <li><a href="{{url_for('register')}}"> Register</a></li>
+            <li><a href="{{url_for('posts')}}"> Posts</a></li>
+        </ul>
+    </div>
+</nav>
+{% for message in get_flashed_messages() %}
+    <p>{{ message }}</p>
+{% endfor %}
+<div class="container-fluid">
+    {% block content %}
+
+
+    {% endblock %}
+
+    {% block footer %}
+    <footer class="row">
+        <div class="text-center">
+            &copy; Copyright 2020 by
+            <a href="http://domain.invalid/">http://domain.invalid/</a>.
+        </div>
+    </footer>
+    {% endblock %}
+</div>
+
+</body>
+</html>
