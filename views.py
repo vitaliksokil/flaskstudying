@@ -61,7 +61,20 @@ def register():
 @app.route('/posts', methods=['GET', 'POST'])
 def posts():
     posts = Post.query.all()
-    return render_template('posts.html', posts=posts)
+    q = request.args.get('q')
+    page = request.args.get('page')
+    if page and page.isdigit():
+        page = int(page)
+    else:
+        page = 1
+
+    if q:
+        posts = Post.query.filter(Post.title.contains(q) | Post.content.contains(q))
+    else:
+        posts = Post.query.order_by(Post.date_posted.desc())
+
+    pages = posts.paginate(page=page,per_page=5)
+    return render_template('posts.html', posts=posts, pages=pages, q=q)
 
 
 @app.route('/logout')
