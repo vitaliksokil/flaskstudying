@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block content %}
+    {% from "_render_field.html" import render_field %}
+    <form method="POST">
+        {{ form.csrf_token }}
+        <div class="form-group">
+            {{ render_field(form.name, class="form-control") }}
+            {{ render_field(form.last_name, class="form-control") }}
+            {{ render_field(form.phone, class="form-control") }}
+            {{ render_field(form.sex, class="form-control") }}
+            {{ render_field(form.birth_day, class="form-control") }}
+            {{ render_field(form.friend_rank, class="form-control") }}
+            {{ render_field(form.hobby, class="form-control") }}
+        </div>
+
+        {{ render_field(form.submit, class="form-control btn btn-success") }}
+
+    </form>
+{% endblock %}
