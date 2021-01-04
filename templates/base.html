@@ -30,32 +30,31 @@
             <li><a href="{{url_for('posts')}}"> Posts</a></li>
 
             {% if current_user.is_authenticated %}
-             <li><a href="{{url_for('account')}}"> Account</a></li>
-             <li><a href="{{url_for('new_post')}}"> Create new post</a></li>
+            <li><a href="{{url_for('account')}}"> Account</a></li>
+            <li><a href="{{url_for('new_post')}}"> Create new post</a></li>
             <li><a href="{{url_for('logout')}}"> Logout</a></li>
             {% else %}
-             <li><a href="{{url_for('login')}}"> Login</a></li>
+            <li><a href="{{url_for('login')}}"> Login</a></li>
             <li><a href="{{url_for('register')}}"> Register</a></li>
             {% endif %}
         </ul>
     </div>
 </nav>
-{% for message in get_flashed_messages() %}
-    <p>{{ message }}</p>
-{% endfor %}
+<div class="col-md-8">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+</div>
 <div class="container-fluid">
     {% block content %}
 
 
-    {% endblock %}
-
-    {% block footer %}
-    <footer class="row">
-        <div class="text-center">
-            &copy; Copyright 2020 by
-            <a href="http://domain.invalid/">http://domain.invalid/</a>.
-        </div>
-    </footer>
     {% endblock %}
 </div>
 

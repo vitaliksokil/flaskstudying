@@ -1,12 +1,25 @@
 from flask import render_template, url_for, flash, redirect, request, abort
+from flask_admin import expose, BaseView
+
 from app import app, bcrypt, db
-from app.forms import RegistrationForm, LoginForm, PostForm
+from app.forms import RegistrationForm, LoginForm, PostForm, AdminUserUpdateForm, AdminUserCreateForm
 from app.models import User, Post
 from flask_login import login_user, current_user, logout_user, login_required
 from app.forms import RegistrationForm, LoginForm, UpdateAccountForm
 import os
 import secrets
 from PIL import Image
+from functools import wraps
+
+
+def admin_login_required(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if not current_user.is_admin():
+            return abort(403)
+        return func(*args, **kwargs)
+    return decorated_view
+
 
 
 @app.route('/')
@@ -177,3 +190,79 @@ def delete_post(post_id):
     db.session.commit()
     flash('Your post hes been deleted!', 'success')
     return redirect(url_for('posts'))
+
+
+@app.route('/admin')
+@login_required
+@admin_login_required
+def home_admin():
+    return render_template('admin/admin-home.html')
+
+
+
+@app.route('/admin/users-list')
+@login_required
+@admin_login_required
+def users_list_admin():
+    users = User.query.all()
+    return render_template('admin/users-list-admin.html', users=users)
+
+
+@app.route('/admin/update-user/<id>', methods=['GET', 'POST'])
+@login_required
+@admin_login_required
+def user_update_admin(id):
+    user = User.query.get(id)
+    form = AdminUserUpdateForm(request.form,username=user.username,admin=user.admin,email=user.email)
+    if form.validate_on_submit():
+        username = form.username.data
+        email = form.email.data
+        admin = form.admin.data
+        User.query.filter_by(id=id).update({'username': username,'admin': admin,'email':email })
+        db.session.commit()
+        flash('User Updated.', 'success')
+        return redirect(url_for('users_list_admin'))
+    return render_template('admin/user-update-admin.html', form=form, user=user)
+
+
+
+@app.route('/admin/delete-user/<id>')
+@login_required
+@admin_login_required
+def user_delete_admin(id):
+    user = User.query.get(id)
+    db.session.delete(user)
+    db.session.commit()
+    flash('User Deleted.','success')
+    return redirect(url_for('users_list_admin'))
+
+
+@app.route('/admin/create-user', methods=['GET', 'POST'])
+@login_required
+@admin_login_required
+def user_create_admin():
+    form = AdminUserCreateForm(request.form)
+    if form.validate_on_submit():
+        username = form.username.data
+        email = form.email.data
+        password = form.password.data
+        admin = form.admin.data
+        existing_username = User.query.filter_by(username=username).first()
+        if existing_username:
+            flash('This username has been already taken. Try another one.', 'warning')
+            return render_template('register.html', form=form)
+        user = User(username=username,email=email, password=password, admin=admin)
+        db.session.add(user)
+        db.session.commit()
+        flash('New User Created.', 'info')
+        return redirect(url_for('users_list_admin'))
+    return render_template('admin/user-create-admin.html', form=form)
+
+
+class HelloView(BaseView):
+    @expose('/')
+    def index(self):
+        return self.render('admin/admin-home.html')
+
+    def is_accessible(self):
+        return current_user.is_authenticated() and current_user.is_admin()

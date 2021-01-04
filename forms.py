@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, DateTimeField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Regexp
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Regexp, InputRequired
 from app.models import User
 from flask_login import current_user
 
@@ -60,3 +60,19 @@ class PostForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     content = TextAreaField('Content', validators=[DataRequired()])
     submit = SubmitField('Post')
+
+
+class AdminUserCreateForm(FlaskForm):
+    username = StringField('Username', [InputRequired()])
+    email = StringField('Email', [InputRequired()])
+    password = PasswordField('Password', [InputRequired()])
+    admin = BooleanField('Is Admin ?')
+    submit = SubmitField('Submit')
+
+
+
+class AdminUserUpdateForm(FlaskForm):
+    username = StringField('Username', [InputRequired()])
+    email = StringField('Email', [InputRequired()])
+    admin = BooleanField('Is Admin ?')
+    submit = SubmitField('Submit')

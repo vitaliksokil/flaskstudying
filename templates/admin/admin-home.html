@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+            <h1>Welcome to the Admin Demo</h1>
+            <h2>Hey Admin!!!</h2>
+            <ul class="nav">
+                <li><a href="{{url_for('users_list_admin')}}">List of all users</a></li>
+                <li><a href="{{url_for('user_create_admin')}}">Create a new user</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
