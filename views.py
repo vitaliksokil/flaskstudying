@@ -1,4 +1,4 @@
-from flask import render_template, url_for, flash, redirect, request, abort
+from flask import render_template, url_for, flash, redirect, request, abort, jsonify
 from flask_admin import expose, BaseView
 
 from app import app, bcrypt, db
@@ -18,8 +18,8 @@ def admin_login_required(func):
         if not current_user.is_admin():
             return abort(403)
         return func(*args, **kwargs)
-    return decorated_view
 
+    return decorated_view
 
 
 @app.route('/')
@@ -86,7 +86,7 @@ def posts():
     else:
         posts = Post.query.order_by(Post.date_posted.desc())
 
-    pages = posts.paginate(page=page,per_page=5)
+    pages = posts.paginate(page=page, per_page=5)
     return render_template('posts.html', posts=posts, pages=pages, q=q)
 
 
@@ -199,7 +199,6 @@ def home_admin():
     return render_template('admin/admin-home.html')
 
 
-
 @app.route('/admin/users-list')
 @login_required
 @admin_login_required
@@ -213,17 +212,16 @@ def users_list_admin():
 @admin_login_required
 def user_update_admin(id):
     user = User.query.get(id)
-    form = AdminUserUpdateForm(request.form,username=user.username,admin=user.admin,email=user.email)
+    form = AdminUserUpdateForm(request.form, username=user.username, admin=user.admin, email=user.email)
     if form.validate_on_submit():
         username = form.username.data
         email = form.email.data
         admin = form.admin.data
-        User.query.filter_by(id=id).update({'username': username,'admin': admin,'email':email })
+        User.query.filter_by(id=id).update({'username': username, 'admin': admin, 'email': email})
         db.session.commit()
         flash('User Updated.', 'success')
         return redirect(url_for('users_list_admin'))
     return render_template('admin/user-update-admin.html', form=form, user=user)
-
 
 
 @app.route('/admin/delete-user/<id>')
@@ -233,7 +231,7 @@ def user_delete_admin(id):
     user = User.query.get(id)
     db.session.delete(user)
     db.session.commit()
-    flash('User Deleted.','success')
+    flash('User Deleted.', 'success')
     return redirect(url_for('users_list_admin'))
 
 
@@ -251,7 +249,7 @@ def user_create_admin():
         if existing_username:
             flash('This username has been already taken. Try another one.', 'warning')
             return render_template('register.html', form=form)
-        user = User(username=username,email=email, password=password, admin=admin)
+        user = User(username=username, email=email, password=password, admin=admin)
         db.session.add(user)
         db.session.commit()
         flash('New User Created.', 'info')
@@ -266,3 +264,75 @@ class HelloView(BaseView):
 
     def is_accessible(self):
         return current_user.is_authenticated() and current_user.is_admin()
+
+
+@app.route('/api/posts', methods=['GET'])
+def api_get_all_posts():
+    posts = Post.query.all()
+
+    output = []
+
+    for post in posts:
+        post_data = {}
+        post_data['id'] = post.id
+        post_data['title'] = post.title
+        post_data['date_posted'] = post.date_posted
+        post_data['content'] = post.content
+        post_data['user_id'] = post.user_id
+        output.append(post_data)
+
+    return jsonify({'posts': output})
+
+
+@app.route('/api/posts/<id>', methods=['GET'])
+def api_get_one_post(id):
+    post = Post.query.filter_by(id=id).first()
+
+    if not post:
+        return jsonify({'message': 'Post not found'})
+
+    post_data = {}
+    post_data['id'] = post.id
+    post_data['title'] = post.title
+    post_data['date_posted'] = post.date_posted
+    post_data['content'] = post.content
+    post_data['user_id'] = post.user_id
+
+    return jsonify({'post': post_data})
+
+
+@app.route('/api/posts', methods=['POST'])
+def api_create_post():
+    data = request.json
+    first_user = User.query.first()
+    new_post = Post(title=data['title'], content=data['content'], user_id=first_user.id)
+    db.session.add(new_post)
+    db.session.commit()
+    return jsonify({'message': 'New post created'})
+
+
+@app.route('/api/posts/<id>', methods=['PUT'])
+def api_edit_post(id):
+    data = request.json
+    post = Post.query.filter_by(id=id).first()
+
+    if not post:
+        return jsonify({'message': 'No post found'})
+
+    post.title = data['title']
+    post.content = data['content']
+    db.session.commit()
+
+    return jsonify({'message': 'The post has been updated'})
+
+
+@app.route('/api/posts/<id>', methods=['DELETE'])
+def api_delete_post(id):
+    post = Post.query.filter_by(id=id).first()
+
+    if not post:
+        return jsonify({'message': 'No post found'})
+
+    db.session.delete(post)
+    db.session.commit()
+    return jsonify({'message': 'The post has been deleted'})
