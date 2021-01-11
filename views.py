@@ -1,83 +1,104 @@
-from flask import render_template, url_for, flash, redirect, request
+from flask import request, jsonify
 from app import app, db
-from app.forms import FriendForm
 from app.models import Friend
+from datetime import datetime
 
 
-@app.route('/')
+
+@app.route('/api/friends', methods=['GET'])
 def index():
     friends = Friend.query.all()
-    q = request.args.get('q')
-    page = request.args.get('page')
-    if page and page.isdigit():
-        page = int(page)
-    else:
-        page = 1
+    output = []
 
-    if q:
-        friends = Friend.query.filter(Friend.name.contains(q) | Friend.last_name.contains(q))
-    else:
-        friends = Friend.query.order_by(Friend.id.desc())
+    for friend in friends:
+        friend_data = {}
+        friend_data['id'] = friend.id
+        friend_data['name'] = friend.name
+        friend_data['last_name'] = friend.last_name
+        friend_data['phone'] = friend.phone
+        friend_data['sex'] = friend.sex
+        friend_data['birth_day'] = friend.birth_day
+        friend_data['friend_rank'] = friend.friend_rank
+        friend_data['hobby'] = friend.hobby
+        output.append(friend_data)
 
-    pages = friends.paginate(page=page, per_page=5)
-    return render_template('index.html', friends=friends, pages=pages, q=q)
+    return jsonify({'friends': output})
 
 
-@app.route('/create', methods=['GET', 'POST'])
+
+@app.route('/api/friends', methods=['POST'])
 def create():
-    form = FriendForm()
-    if form.validate_on_submit():
-        friend = Friend(name=form.name.data,
-                        last_name=form.last_name.data,
-                        phone=form.phone.data,
-                        sex=form.sex.data,
-                        birth_day=form.birth_day.data,
-                        friend_rank=form.friend_rank.data,
-                        hobby=form.hobby.data)
-        db.session.add(friend)
-        db.session.commit()
-        flash('Your friend has been created!', 'success')
-        return redirect(url_for('index'))
-    return render_template('create.html', form=form)
+    data = request.json
+
+    year = int(data['birth_day'][:4])
+    month = int(data['birth_day'][5:7])
+    day = int(data['birth_day'][8:10])
+    birth_day = datetime(year, month, day)
+
+    new_friend = Friend(name=data['name'],
+                    last_name=data['last_name'],
+                    phone=data['phone'],
+                    sex=data['sex'],
+                    birth_day=birth_day,
+                    friend_rank=data['friend_rank'],
+                    hobby=data['hobby'])
+    db.session.add(new_friend)
+    db.session.commit()
+    return jsonify({'message': 'New friend created'})
 
 
-@app.route("/friend/<int:friend_id>")
+@app.route("/api/friends/<int:friend_id>", methods=['GET'])
 def friend(friend_id):
-    friend = Friend.query.get_or_404(friend_id)
-    return render_template('friend.html', friend=friend)
+    friend = Friend.query.filter_by(id=friend_id).first()
+
+    if not friend:
+        return jsonify({'message': 'Friend not found'})
+
+    friend_data = {}
+    friend_data['id'] = friend.id
+    friend_data['name'] = friend.name
+    friend_data['last_name'] = friend.last_name
+    friend_data['phone'] = friend.phone
+    friend_data['sex'] = friend.sex
+    friend_data['birth_day'] = friend.birth_day
+    friend_data['friend_rank'] = friend.friend_rank
+    friend_data['hobby'] = friend.hobby
+
+    return jsonify({'friend': friend_data})
 
 
-@app.route("/friend/<int:friend_id>/update", methods=['GET', 'POST'])
+@app.route("/api/friends/<int:friend_id>", methods=['PUT'])
 def update_friend(friend_id):
-    friend = Friend.query.get_or_404(friend_id)
-    form = FriendForm()
-    if form.validate_on_submit():
-        friend.name = form.name.data
-        friend.last_name = form.last_name.data
-        friend.phone = form.phone.data
-        friend.sex = form.sex.data
-        friend.birth_day = form.birth_day.data
-        friend.friend_rank = form.friend_rank.data
-        friend.hobby = form.hobby.data
-        db.session.commit()
-        flash('Your friend hes been updated!', 'success')
-        return redirect(url_for('friend', friend_id=friend.id))
-    elif request.method == 'GET':
-        form.name.data = friend.name
-        form.last_name.data = friend.last_name
-        form.phone.data = friend.phone
-        form.sex.data = friend.sex
-        form.birth_day.data = friend.birth_day
-        form.friend_rank.data = friend.friend_rank
-        form.hobby.data = friend.hobby
+    data = request.json
+    friend = Friend.query.filter_by(id=friend_id).first()
 
-    return render_template('create.html', form=form)
+    if not friend:
+        return jsonify({'message': 'Friend not found'})
+
+    year = int(data['birth_day'][:4])
+    month = int(data['birth_day'][5:7])
+    day = int(data['birth_day'][8:10])
+    birth_day = datetime(year, month, day)
+
+    friend.name = data['name']
+    friend.last_name = data['last_name']
+    friend.phone = data['phone']
+    friend.sex = data['sex']
+    friend.birth_day = birth_day
+    friend.friend_rank = data['friend_rank']
+    friend.hobby = data['hobby']
+    db.session.commit()
+
+    return jsonify({'message': 'The friend has been updated'})
 
 
-@app.route("/friend/<int:friend_id>/delete", methods=['GET', 'POST'])
+@app.route("/api/friends/<int:friend_id>", methods=['DELETE'])
 def delete_friend(friend_id):
-    friend = Friend.query.get_or_404(friend_id)
+    friend = Friend.query.filter_by(id=friend_id).first()
+
+    if not friend:
+        return jsonify({'message': 'Friend was not found'})
+
     db.session.delete(friend)
     db.session.commit()
-    flash('Your friend hes been deleted!', 'success')
-    return redirect(url_for('index'))
+    return jsonify({'message': 'The friend has been deleted'})
